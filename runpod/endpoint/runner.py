@@ -41,7 +41,7 @@ class RunPodClient:
         self.endpoint_url_base = endpoint_url_base
 
     def _request(self,
-                 method: str, endpoint: str, data: Optional[dict] = None, timeout: int = 10):
+                 method: str, endpoint: str, data: Optional[dict] = None, timeout: int = 60):
         """
         Make a request to the specified endpoint using the given HTTP method.
 
@@ -102,7 +102,7 @@ class Job:
     def _fetch_job(self, source: str = "status") -> Dict[str, Any]:
         """ Returns the raw json of the status, raises an exception if invalid """
         status_url = f"{self.endpoint_id}/{source}/{self.job_id}"
-        job_state = self.rp_client.get(endpoint=status_url)
+        job_state = self.rp_client.get(endpoint=status_url, timeout=60)
 
         if is_completed(job_state["status"]):
             self.job_status = job_state["status"]
@@ -139,7 +139,6 @@ class Job:
     def stream(self) -> Any:
         """ Returns a generator that yields the output of the job request. """
         while True:
-            time.sleep(1)
             stream_partial = self._fetch_job(source="stream")
             if stream_partial["status"] not in FINAL_STATES or len(stream_partial["stream"]) > 0:
                 for chunk in stream_partial.get("stream", []):
